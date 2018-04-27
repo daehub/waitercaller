@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Daehub'
 
-
+import config
 from flask import Flask
 from flask import render_template
 from flask import redirect
 from flask import request
 from flask import url_for
+from flask_login import current_user
 from flask_login import LoginManager
 from flask_login import login_required
 from flask_login import login_user
@@ -31,7 +32,8 @@ def home(error_message=None):
 @app.route('/account')
 @login_required
 def account():
-    return "You are logged in !"
+    tables = DB.get_tables(current_user.get_id())
+    return render_template("account.html", tables=tables)
 
 
 @app.route('/login', methods=['POST'])
@@ -73,6 +75,22 @@ def load_user(user_id):
     user_password = DB.get_user(user_id)
     if user_password:
         return User(user_id)
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.route("/account/createtable")
+@login_required
+def account_createtable():
+    tableName = request.form.get("tablenumber")
+    tableID = DB.add_table(tableName , current_user.get_id())
+    new_URL = config.base_url + "newrequest/" + tableID
+    DB.update_table(tableID, new_URL)
+    return redirect(url_for('account'))
 
 
 if __name__ == '__main__':
