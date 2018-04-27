@@ -93,5 +93,13 @@ def account_createtable():
     return redirect(url_for('account'))
 
 
+@app.route("/account/deletetable")
+@login_required
+def account_table():
+    tableid = request.args.get('tableID')
+    DB.delete_table(tableid)
+    return redirect(url_for("account"))
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
