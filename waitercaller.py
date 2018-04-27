@@ -83,7 +83,7 @@ def dashboard():
     return render_template("dashboard.html")
 
 
-@app.route("/account/createtable")
+@app.route("/account/createtable",methods=['POST'])
 @login_required
 def account_createtable():
     tableName = request.form.get("tablenumber")
