@@ -115,5 +115,13 @@ def dashboard():
     return render_template("dashboard.html", requests=requests)
 
 
+@app.route('/dashboard/resolve')
+@login_required
+def dashboard_resolve():
+    request_id = request.args.get("request_id")
+    DB.delete_request(request_id)
+    return redirect(url_for('dashboard'))
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
