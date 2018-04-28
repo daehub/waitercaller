@@ -18,6 +18,7 @@ from flask_login import logout_user
 from user import User
 from mockdbhelper import MockDBHelper as DBHelper
 from passwordhelper import PasswordHelper
+from forms import RegistrationForm
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -29,7 +30,8 @@ app.secret_key = 'ypzuLGRoE/pFeD/MyElW9N9HU/Qugm4ctGJHRDUb0vT4fRCtYDP4n6nOTAIGDg
 
 @app.route('/')
 def home(error_message=None):
-    return render_template('home.html',error_message = error_message)
+    registrationform = RegistrationForm()
+    return render_template('home.html',error_message = error_message,registrationform=registrationform)
 
 
 @app.route('/account')
