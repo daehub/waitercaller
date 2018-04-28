@@ -3,6 +3,8 @@
 __author__ = 'Daehub'
 
 import config
+import datetime
+from bitlyhelper import BitlyHelper
 from flask import Flask
 from flask import render_template
 from flask import redirect
@@ -19,6 +21,7 @@ from passwordhelper import PasswordHelper
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
+BH = BitlyHelper()
 DB = DBHelper()
 PH = PasswordHelper()
 app.secret_key = 'ypzuLGRoE/pFeD/MyElW9N9HU/Qugm4ctGJHRDUb0vT4fRCtYDP4n6nOTAIGDgjQVgn6GhzM0D5R4ZOdmpCGgVV9E4hW0aCQml5'
@@ -77,18 +80,12 @@ def load_user(user_id):
         return User(user_id)
 
 
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    return render_template("dashboard.html")
-
-
 @app.route("/account/createtable",methods=['POST'])
 @login_required
 def account_createtable():
     tableName = request.form.get("tablenumber")
     tableID = DB.add_table(tableName , current_user.get_id())
-    new_URL = config.base_url + "newrequest/" + tableID
+    new_URL = BH.shorten_url(config.base_url + "newrequest/" + tableID)
     DB.update_table(tableID, new_URL)
     return redirect(url_for('account'))
 
@@ -99,6 +96,23 @@ def account_table():
     tableid = request.args.get('tableID')
     DB.delete_table(tableid)
     return redirect(url_for("account"))
+
+
+@app.route('/newrequest/<tid>')
+def new_request(tid):
+    DB.add_request(tid,datetime.datetime.now())
+    return "Your request has been looged and a waiter will be with you shortly"
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    now = datetime.datetime.now()
+    requests = DB.get_requests(current_user.get_id())
+    for req in requests:
+        deltaseconds = (now - req['time']).seconds
+        req['wait_minutes'] = "{}.{}".format((deltaseconds/60),str(deltaseconds % 60).zfill(2))
+    return render_template("dashboard.html", requests=requests)
 
 
 if __name__ == '__main__':
