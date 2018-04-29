@@ -62,17 +62,19 @@ def logout():
 
 @app.route('/register', methods=['POST'])
 def register():
-    email = request.form.get('email')
-    pw1 = request.form.get('password')
-    pw2 = request.form.get('password2')
-    if not pw1 == pw2 :
+    regForm = RegistrationForm(request.form)
+    if regForm.validate():
+        if DB.get_user(regForm.email.data):
+            regForm.email.errors.append("Email address already registered")
+            return render_template('home.html',registrationform=regForm)
+        email = request.form.get('email')
+        pw1 = request.form.get('password')
+        pw2 = request.form.get('password2')
+        salt = PH.get_salt()
+        hashed = PH.get_hash(pw1+str(salt))
+        DB.add_user(email,salt,hashed)
         return redirect(url_for('home'))
-    if DB.get_user(email):
-        return redirect(url_for('home'))
-    salt = PH.get_salt()
-    hashed = PH.get_hash(pw1+str(salt))
-    DB.add_user(email,salt,hashed)
-    return redirect(url_for('home'))
+    return render_template("home.html",registrationform=regForm)
 
 
 @login_manager.user_loader
