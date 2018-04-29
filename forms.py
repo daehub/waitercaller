@@ -5,6 +5,7 @@ __author__ = 'Daehub'
 from wtforms import Form
 from wtforms import PasswordField
 from wtforms import SubmitField
+from wtforms import StringField
 from wtforms.fields.html5 import EmailField
 from wtforms import validators
 
@@ -21,6 +22,10 @@ class LoginForm(Form):
     loginpassword = PasswordField('password',[validators.data_required(message="Password field is required")])
     submit = SubmitField('submit',[validators.DataRequired()])
 
+
+class TableForm(Form):
+    tableID = StringField('tablename',[validators.DataRequired()])
+    submit = SubmitField('submit',[validators.DataRequired()])
 
 if __name__ == '__main__':
     app = False(__name__)

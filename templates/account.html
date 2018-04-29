@@ -1,5 +1,5 @@
 {% extends "templet.html" %}
-{% block bodytag %}{% endblock %}
+{% block bodytag %}<body>{% endblock %}
 {% block content %}
     <div class="jumbotron">
         <div class="container">
@@ -28,10 +28,20 @@
                     </form>
                     {% endfor %}
                 </table>
-                <form class="form-inline" action="/account/createtable" method="POST">
-                    <input type="text" name="tablenumber" placeholder="Table number or name" class="form-control">
-                    <input type="submit" value="Create" class="btn btn-primary">
-                </form>
+                <form class="form-inline" action="/account/createtable" method="post">
+                    <div class="form-group">
+                        {% if tableform.tableID.errors %}
+                          <ul class="errors">
+                            {% for error in tableform.tableID.errors %}
+                              <li>{{ error }}</li>
+                            {% endfor %}
+                          </ul>
+                        {% endif %}
+                    </div>
+                    {{ tableform.csrf_token }}
+                    {{ tableform.tableID(placeholder="Table number or name", class="form-control")}}
+                    {{ tableform.submit(class="btn btn-primary")}}
+                  </form>
             </div>
         </div>
     </div>

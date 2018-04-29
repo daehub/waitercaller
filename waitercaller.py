@@ -18,7 +18,7 @@ from flask_login import logout_user
 from user import User
 from mockdbhelper import MockDBHelper as DBHelper
 from passwordhelper import PasswordHelper
-from forms import RegistrationForm, LoginForm
+from forms import RegistrationForm, LoginForm, TableForm
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -44,7 +44,7 @@ def home(error_message=None):
 @login_required
 def account():
     tables = DB.get_tables(current_user.get_id())
-    return render_template("account.html", tables=tables)
+    return render_template("account.html", tables=tables,tableform = TableForm())
 
 
 @app.route('/login', methods=['POST'])
@@ -78,18 +78,21 @@ def register():
         salt = PH.get_salt()
         hashed = PH.get_hash(regForm.password.data+str(salt))
         DB.add_user(email,salt,hashed)
-        return render_template("home.html", registrationform=regForm, onloadmessage="Registration successful. Please log in.", loginform=LoginForm())
+        return redirect(url_for('account'))
     return render_template("home.html", registrationform=regForm, loginform=LoginForm())
 
 
 @app.route("/account/createtable",methods=['POST'])
 @login_required
 def account_createtable():
-    tableName = request.form.get("tablenumber")
-    tableID = DB.add_table(tableName , current_user.get_id())
-    new_URL = BH.shorten_url(config.base_url + "newrequest/" + tableID)
-    DB.update_table(tableID, new_URL)
-    return redirect(url_for('account'))
+    tableform = TableForm(request.form)
+    if tableform.validate():
+        tableName = tableform.tableID.data
+        tableID = DB.add_table(tableName , current_user.get_id())
+        new_URL = BH.shorten_url(config.base_url + "newrequest/" + tableID)
+        DB.update_table(tableID, new_URL)
+        return redirect(url_for('account'))
+    return render_template("account.html",tableform=tableform,tables=DB.get_tables(current_user.get_id()))
 
 
 @app.route("/account/deletetable")
