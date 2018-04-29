@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Daehub'
 
-from flask_wtf import Form
+from wtforms import Form
 from wtforms import PasswordField
 from wtforms import SubmitField
 from wtforms.fields.html5 import EmailField
@@ -14,6 +14,12 @@ class RegistrationForm(Form):
     password = PasswordField('password',  [validators.required(), validators.Length(min=8,message="Please choose a password of at least 8 characters")])
     password2 = PasswordField('password2', [validators.required(), validators.EqualTo('password',message='Passwords must match')])
     submit = SubmitField('submit', [validators.DataRequired()])
+
+
+class LoginForm(Form):
+    loginemail = EmailField('email',[validators.DataRequired(),validators.Email()])
+    loginpassword = PasswordField('password',[validators.data_required(message="Password field is required")])
+    submit = SubmitField('submit',[validators.DataRequired()])
 
 
 if __name__ == '__main__':

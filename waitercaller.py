@@ -18,7 +18,7 @@ from flask_login import logout_user
 from user import User
 from mockdbhelper import MockDBHelper as DBHelper
 from passwordhelper import PasswordHelper
-from forms import RegistrationForm
+from forms import RegistrationForm, LoginForm
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -28,10 +28,16 @@ PH = PasswordHelper()
 app.secret_key = 'ypzuLGRoE/pFeD/MyElW9N9HU/Qugm4ctGJHRDUb0vT4fRCtYDP4n6nOTAIGDgjQVgn6GhzM0D5R4ZOdmpCGgVV9E4hW0aCQml5'
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    user_password = DB.get_user(user_id)
+    if user_password:
+        return User(user_id)
+
+
 @app.route('/')
 def home(error_message=None):
-    registrationform = RegistrationForm()
-    return render_template('home.html',error_message = error_message,registrationform=registrationform)
+    return render_template('home.html', error_message=error_message, registrationform=RegistrationForm(), loginform=LoginForm())
 
 
 @app.route('/account')
@@ -43,15 +49,16 @@ def account():
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.form.get("email")
-    password = request.form.get("password")
-    stored_user = DB.get_user(email)
-    if stored_user and PH.validate_password(password,stored_user['salt'].encode('utf-8'),stored_user['hashed']):
-        user = User(email)
-        login_user(user)
-        return redirect(url_for('account'))
+    loginForm = LoginForm(request.form)
+    if loginForm.validate():
+        stored_user = DB.get_user(loginForm.loginemail.data)
+        if stored_user and PH.validate_password(loginForm.loginpassword.data, stored_user['salt'].encode('utf-8'), stored_user['hashed']):
+            user = User(loginForm.loginemail.data)
+            login_user(user)
+            return redirect(url_for('account'))
         # return account()
-    return home()
+        loginForm.loginemail.errors.append("Email or password invalid")
+    return render_template("home.html", loginform=loginForm, registrationform=RegistrationForm())
 
 
 @app.route('/logout')
@@ -67,21 +74,12 @@ def register():
         if DB.get_user(regForm.email.data):
             regForm.email.errors.append("Email address already registered")
             return render_template('home.html',registrationform=regForm)
-        email = request.form.get('email')
-        pw1 = request.form.get('password')
-        pw2 = request.form.get('password2')
+        email = regForm.email.data
         salt = PH.get_salt()
-        hashed = PH.get_hash(pw1+str(salt))
+        hashed = PH.get_hash(regForm.password.data+str(salt))
         DB.add_user(email,salt,hashed)
-        return redirect(url_for('home'))
-    return render_template("home.html",registrationform=regForm)
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    user_password = DB.get_user(user_id)
-    if user_password:
-        return User(user_id)
+        return render_template("home.html", registrationform=regForm, onloadmessage="Registration successful. Please log in.", loginform=LoginForm())
+    return render_template("home.html", registrationform=regForm, loginform=LoginForm())
 
 
 @app.route("/account/createtable",methods=['POST'])
