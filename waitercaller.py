@@ -96,7 +96,7 @@ def register():
 def account_createtable():
     tableName = request.form.get("tablenumber")
     tableID = DB.add_table(tableName , current_user.get_id())
-    new_URL = config.base_url + "newrequest/" + str(tableID)
+    new_URL = BH.shorten_url(config.base_url + "newrequest/" + str(tableID))
     DB.update_table(tableID, new_URL)
     return redirect(url_for('account'))
 
@@ -119,7 +119,8 @@ def new_request(tid):
 @login_required
 def dashboard():
     now = datetime.datetime.now()
-    requests = DB.get_requests(current_user.get_id())
+    curID= current_user.get_id()
+    requests = DB.get_requests(curID)
     for req in requests:
         deltaseconds = (now - req['time']).seconds
         req['wait_minutes'] = "{}.{}".format((deltaseconds/60),str(deltaseconds % 60).zfill(2))
