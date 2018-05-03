@@ -16,9 +16,14 @@ from flask_login import login_required
 from flask_login import login_user
 from flask_login import logout_user
 from user import User
-from mockdbhelper import MockDBHelper as DBHelper
 from passwordhelper import PasswordHelper
 from forms import RegistrationForm, LoginForm, TableForm
+from forms import RegistrationForm, LoginForm
+if config.test:
+    from mockdbhelper import MockDBHelper as DBHelper
+else:
+    from dbhelper import DBHelper
+
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -52,7 +57,12 @@ def login():
     loginForm = LoginForm(request.form)
     if loginForm.validate():
         stored_user = DB.get_user(loginForm.loginemail.data)
-        if stored_user and PH.validate_password(loginForm.loginpassword.data, stored_user['salt'].encode('utf-8'), stored_user['hashed']):
+        # salt = str(stored_user['salt']).replace("b'","")
+        # verify = PH.get_hash(loginForm.loginpassword.data+salt)
+        # print(verify)
+        # hashed = stored_user['hashed']
+        # print(hashed)
+        if stored_user and PH.validate_password(loginForm.loginpassword.data, str(stored_user['salt']).replace("b'",""), stored_user['hashed']):
             user = User(loginForm.loginemail.data)
             login_user(user)
             return redirect(url_for('account'))
@@ -73,12 +83,12 @@ def register():
     if regForm.validate():
         if DB.get_user(regForm.email.data):
             regForm.email.errors.append("Email address already registered")
-            return render_template('home.html',registrationform=regForm)
+            return render_template('home.html',registrationform=regForm,loginform=LoginForm())
         email = regForm.email.data
         salt = PH.get_salt()
-        hashed = PH.get_hash(regForm.password.data+str(salt))
+        hashed = PH.get_hash(regForm.password.data+str(salt).replace("b'",""))
         DB.add_user(email,salt,hashed)
-        return redirect(url_for('account'))
+        return render_template("home.html", loginform=LoginForm(), registrationform=regForm, onloadmessage="Registration successful. Please log in.")
     return render_template("home.html", registrationform=regForm, loginform=LoginForm())
 
 
@@ -89,10 +99,10 @@ def account_createtable():
     if tableform.validate():
         tableName = tableform.tableID.data
         tableID = DB.add_table(tableName , current_user.get_id())
-        new_URL = BH.shorten_url(config.base_url + "newrequest/" + tableID)
+        new_URL = BH.shorten_url(config.base_url + "newrequest/" + str(tableID))
         DB.update_table(tableID, new_URL)
         return redirect(url_for('account'))
-    return render_template("account.html",tableform=tableform,tables=DB.get_tables(current_user.get_id()))
+    return render_template("account.html", tableform=tableform, tables=DB.get_tables(current_user.get_id()))
 
 
 @app.route("/account/deletetable")
@@ -103,17 +113,18 @@ def account_table():
     return redirect(url_for("account"))
 
 
-@app.route('/newrequest/<tid>')
+@app.route("/newrequest/<tid>")
 def new_request(tid):
-    DB.add_request(tid,datetime.datetime.now())
-    return "Your request has been looged and a waiter will be with you shortly"
-
+    if DB.add_request(tid, datetime.datetime.now()):
+        return "Your request has been logged and a waiter will be with you shortly"
+    return "There is already a request pending for this table. Please be patient, a waiter will be there ASAP"
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
     now = datetime.datetime.now()
-    requests = DB.get_requests(current_user.get_id())
+    curID= current_user.get_id()
+    requests = DB.get_requests(curID)
     for req in requests:
         deltaseconds = (now - req['time']).seconds
         req['wait_minutes'] = "{}.{}".format((deltaseconds/60),str(deltaseconds % 60).zfill(2))
