@@ -9,7 +9,7 @@ import os
 
 
 class PasswordHelper(object):
-    def get_hash(self,plain):
+    def get_hash(self, plain):
         hash_SHA = hashlib.sha512()
         hash_SHA.update(plain.encode('utf-8'))
         return hash_SHA.hexdigest()
@@ -17,9 +17,9 @@ class PasswordHelper(object):
     def get_salt(self):
         return base64.b64encode(os.urandom(20))
 
-    def validate_password(self,plain,salt,expected):
+    def validate_password(self, plain, salt, expected):
         hashed = self.get_hash(plain+salt)
-        result = (hashed == expected);
+        result = (hashed == expected)
         return result
 
 
@@ -33,4 +33,4 @@ if __name__ == '__main__':
 
     print(hashed)
     print(salt)
-    print(password.validate_password(plain,salt,'ab66d234b89fa4ca47939b28f4869e77a8780b2c4d976a9e511b916e21519ca91c90ba77e3f40ec12bc1dea81604c0544a53423bc393d104e139357f69e88029'))
+    print(password.validate_password(plain, salt,'ab66d234b89fa4ca47939b28f4869e77a8780b2c4d976a9e511b916e21519ca91c90ba77e3f40ec12bc1dea81604c0544a53423bc393d104e139357f69e88029'))
